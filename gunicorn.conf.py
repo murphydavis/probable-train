@@ -4,4 +4,5 @@ bind = "0.0.0.0:8000"
 workers = 4
 debug = True
 loglevel = "debug"
-logfile = "./debug.log"
+errorlog = "./debug.log"
+wsgi_app = "probable_train:app"

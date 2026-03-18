@@ -128,6 +128,43 @@ Right now there's not much to configure, but there are a few you may tweak.
 
 
 ## Basic design concepts and directory structure
+The base directory contains several files and folders:
+- `LICENSE`/`README.md`/`pyproject.toml`/`uv.lock`
+  * These files are the same as they would be in any other Python project.
+- `static/`
+  * This directory contains various static files, at this point test files for the
+  ingest process.
+- `uploads/`
+  * This directory is used by the application to store all uploaded files. The original
+  filenames and extensions are discarded, and the files renamed with a timestamp.
+- `tests/`
+  * This file contains tests, which includes unit tests and integration tests.
+  **not yet implemented**
+- `probabletrain.db`
+  * If you have initialized the database, by default it will be stored as a file in this
+  top level directory.
+- `debug.log`
+  * Another application default, once the application has been run logs will be stored
+  in this text file.
+- `run.sh`/`run_debug.sh`
+  * These scripts are used to run the server with gunicorn and the flask development
+  server, respectively.
+- `probable_train/`
+  * This directory contains the actual application code, and I will explain the
+  highlights.
+  - `__init__.py`: This file contains the app definition, and at this stage all route
+  definitions. Ideally the routes would be factored out into a separate routes file or
+  multiple blueprints if there are multiple logical groupings.
+  - `config.py`: This file contains the flask app configuration.
+  - `utils.py`: This file is for basic helper functions that don't have another logical
+  home and serve a general purpose.
+  - `controllers/`: This directory contains files that contain definitions of business
+  logic, the heart of the application's functionality.
+  - `db/` and `db/models/`: This directory and subdirectory contain all the code for
+  initializing and connecting to the database, as well as all ORM models, which are the
+  basic operating units of the application.
+
+```
 ├── LICENSE
 ├── README.md
 ├── gunicorn.conf.py
@@ -159,6 +196,7 @@ Right now there's not much to configure, but there are a few you may tweak.
 ├── tests/
 ├── uploads/
 └── uv.lock
+```
 
 ## Future Improvements
 Get CORRECT logic for reconciliation/compliance calculations. This is probably far and

@@ -1,9 +1,8 @@
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional
-from typing_extensions import Annotated
 
-from sqlalchemy import ForeignKey, Numeric, TIMESTAMP
+from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from probable_train.db import ProbableTrainBase
@@ -35,10 +34,10 @@ class Position(ProbableTrainBase):
     # id: Mapped[Annotated[int, mapped_column(primary_key=True)]]
     account_id: Mapped[str] = mapped_column(ForeignKey("account.id"))
     custodian: Mapped[Optional[str]]  # not sure if this is fk
-    market_value = Mapped[Optional[Decimal]]
-    report_date: Mapped[Optional[date]]
-    share_qty: Mapped[Optional[int]]
-    ticker: Mapped[Optional[str]]
+    market_value = Mapped[Decimal]
+    report_date: Mapped[date]
+    share_qty: Mapped[int]
+    ticker: Mapped[str]
 
 
 class Trade(ProbableTrainBase):
@@ -55,4 +54,4 @@ class Trade(ProbableTrainBase):
     settlement_date: Mapped[date]
     share_qty: Mapped[int]
     ticker: Mapped[str]
-    trade_date: Mapped[date]
+    trade_date: Mapped[Optional[date]]

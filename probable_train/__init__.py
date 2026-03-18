@@ -1,14 +1,18 @@
+from datetime import datetime
 import logging
-import sys
+import os
 
 import dateparser
-from flask import jsonify, Flask, request
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+from flask import abort, jsonify, Flask, request
+from sqlalchemy import and_, select
+# from sqlalchemy.orm import Session
+# from werkzeug.utils import secure_filename
 
+from probable_train.controllers.ingest import ingest_file
+from probable_train.controllers.reconciliation import get_reconciliation_report
 from probable_train.db import db_session
-from probable_train.db.models.reconciliation import Account, Position, Trade
-from probable_train.utils import require_query_parameters
+from probable_train.db.models.reconciliation import Position
+from probable_train.utils import allowed_file, require_query_parameters
 
 # some additional setup to get logging to stdout too
 logging.basicConfig(
@@ -20,9 +24,11 @@ logger.setLevel(logging.DEBUG)
 app = Flask(__name__)  # define the Flask app
 app.config.from_pyfile("config.py")
 
+
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     db_session.remove()
+
 
 # -------- API ENDPOINTS --------
 # because there is a pretty limited number of endpoints, define them here
@@ -42,9 +48,44 @@ def index():
 def ingest():
     """
     load files and return data quality report
+
+    form-data
+      - name: file
+        in: files
+        type: file
+        required: true
+        description: the file to ingest
+      - name: ftype
+        in: form
+        type: string
+        required: true
+        description: the ingest data type, selected from trade1, trade2, or position
     """
-    ingest_file = request.files
-    pass
+    # check and save file in uploads
+    file = request.files.get("file")
+    ftype = request.form.get("ftype")
+    if file is None:
+        abort(400, description="No file part found")
+    ext = file.filename.rsplit(".", 1)[1]
+    if not allowed_file(file.filename):
+        abort(400, description=f"Invalid file extension: '{ext}'")
+    if ftype is None:
+        abort(400, description="No file type specified")
+    if ftype not in app.config["INGEST_TYPES"]:
+        abort(400, description=f"Invalid ingest type: '{ftype}'")
+
+    # filename = secure_filename(file.filename)
+    # save ingest file with unique name to prevent overwriting existing files
+    # should OG filename be preserved? Could append a UUID or put in unique folder
+    filename = f"{datetime.utcnow()}.{ext}"
+    full_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+    file.save(full_path)
+    logger.info(f"New upload file {file.filename} saved at {full_path}")
+
+    # ingest file into database
+    ingest_file(full_path, ftype)
+
+    return jsonify("File ingestion successful")
 
 
 @app.route("/positions", methods=["GET"])
@@ -53,50 +94,79 @@ def positions():
     retrieve positions with cost basis and market value
 
     parameters:
-        - name: account
-          in: query
-          type: string
-          required: true
-          description: account ID
-        - name: date
-          in: query
-          type: string
-          required: true
-          description: the date to check
+      - name: account
+        in: query
+        type: string
+        required: true
+        description: account ID
+      - name: date
+        in: query
+        type: string
+        required: true
+        description: the date to check
     """
     require_query_parameters(request, ["account", "date"], strict=True)
 
     account = request.args.get("account")
-    date = dateparser.parse(request.args.get("date"))
+    date = dateparser.parse(request.args.get("date"), date_formats=["%Y%m%d"]).date()
+    query = select(Position).where(
+        and_(Position.account_id == account, Position.report_date <= date)
+    )
+    raw_positions = db_session.scalars(query).all()
+    keys = {
+        "account_id",
+        "custodian",
+        "id",
+        "report_date",
+        "share_qty",
+        "ticker",
+    }
+    positions = []
+    for position in raw_positions:
+        positions.append(
+            {key: val for key, val in position.__dict__.items() if key in keys}
+        )
+    # TODO: This is admittedly *way* too rushed, clunky, and "clever" for its own good
+    # At this point I believe this should be factored out into a separate controller
 
-    query = select(Position).filter_by(account_id=account, report_date=date)
-    # query=select(Position).where(Position.__table__.c.account_id == account)
-    positions = db_session.scalars(query).all()
-
-    acc = Account(id="TEST")
-    pos = Position(id=1234, account_id="TEST")
-    from sqlalchemy.dialects import sqlite
-    qry = query.compile(dialect=sqlite.dialect())
     breakpoint()
-    return positions
+
+    return jsonify(positions)
 
 
+# TODO: this is just a stub
 @app.route("/compliance/concentration", methods=["GET"])
 def compliance_concentration():
     """
     retrieve accounts exceeding the threshold (default 20%) with breach details
+
+    parameters:
+      - name: date
+        in: query
+        type: string
+        required: true
+        description: the date to check
     """
     require_query_parameters(request, ["date"], strict=True)
-    pass
+    return jsonify("")
 
 
 @app.route("/reconciliation", methods=["GET"])
 def reconciliation():
     """
     retrieve trade vs position file discrepancies, optionally specifying date
+
+    parameters:
+      - name: date
+        in: query
+        type: string
+        required: true
+        description: the date to check
     """
     require_query_parameters(request, ["date"], strict=True)
-    pass
+
+    date = dateparser.parse(request.args.get("date"), date_formats=["%Y%m%d"]).date()
+    return get_reconciliation_report(date)
 
 
 # start the app

@@ -24,14 +24,14 @@ $ ./run.sh
 With this, you should be up and running and good to go! To demonstrate that the server
 is running, just hit the base endpoint, either in a browser or like so:
 ```bash
-$ curl localhost:5000/
+$ curl "localhost:5000/"
 ```
 Once this endpoint returns 200 with "server online" then you can hit the other
 endpoints. For `/positions` you must specify `account` with account ID and `date`
 in the url query parameters, and any missing parameters will result in a 400 
 with a specific message as to the issue at hand:
 ```bash
-$ curl localhost:5000/positions?date=2026-03-16
+$ curl "localhost:5000/positions?date=2026-03-16"
 ```
 will give you
 ```html
@@ -73,9 +73,9 @@ the sample documents provided in the top level `static` directory,
 which you can ingest with the aptly named `/ingest` endpoint. From the top level of the
 repository, you can ingest files in the following manner:
 ```bash
-curl -F file=@static/trade1.csv -F ftype=trade1 localhost:5000/ingest
-curl -F file=@static/trade2.psv -F ftype=trade2 localhost:5000/ingest
-curl -F file=@static/position.yml -F ftype=position localhost:5000/ingest
+curl -F file=@static/trade1.csv -F ftype=trade1 "localhost:5000/ingest"
+curl -F file=@static/trade2.psv -F ftype=trade2 "localhost:5000/ingest"
+curl -F file=@static/position.yml -F ftype=position "localhost:5000/ingest"
 ```
 You must use a properly formatted file with a valid permitted file extension, as well
 as a valid ftype. If either part is missing or invalid, you will get a 400 error

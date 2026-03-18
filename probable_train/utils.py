@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 This file contains miscellaneous utilities.
 If you write the same code or pattern 3+ times, consider making it a function here!

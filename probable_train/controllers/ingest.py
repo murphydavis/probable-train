@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Controller for file ingest logic and associated helpers
 """
@@ -117,8 +116,6 @@ INGEST_FUNCTIONS = {
 
 def ingest_file(filepath, format):
     # read file contents
-
-    # breakpoint()
     INGEST_FUNCTIONS[format](filepath)
 
     db_session.commit()

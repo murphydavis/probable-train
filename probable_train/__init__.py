@@ -129,8 +129,6 @@ def positions():
     # TODO: This is admittedly *way* too rushed, clunky, and "clever" for its own good
     # At this point I believe this should be factored out into a separate controller
 
-    breakpoint()
-
     return jsonify(positions)
 
 

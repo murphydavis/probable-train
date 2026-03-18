@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Database-specific helper functions
 This is probably overkill here but establishes a basic pattern

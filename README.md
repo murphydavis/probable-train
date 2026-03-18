@@ -5,7 +5,7 @@ Vest Financial take home project
 All you should need to have installed is `uv` in order to get things working. Before
 running the first time, we need to install and initialize the database, like so:
 ```bash
-$ uv install
+$ uv sync
 $ uv run python -c "from probable_train.db import init_db; init_db()"
 ```
 In the case that you ever want to start fresh, you may either

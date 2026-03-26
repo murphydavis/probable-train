@@ -14,8 +14,8 @@ from probable_train.db.models.reconciliation import Account, Position, Trade
 
 def get_reconciliation_report(report_date):
     accounts = db_session.query(Account).all()
-    reconciliation_report = dict()
-    account_report = dict()
+    reconciliation_report = {}
+    account_report = {}
     for account in accounts:
         account_report[account.id] = defaultdict(dict)
 

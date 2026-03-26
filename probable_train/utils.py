@@ -5,8 +5,7 @@ If you write the same code or pattern 3+ times, consider making it a function he
 
 import logging
 
-from flask import current_app, abort
-
+from flask import abort, current_app
 
 logger = logging.getLogger(__name__)
 

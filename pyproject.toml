@@ -36,9 +36,6 @@ select = [
     "C4", # flake8-comprehensions
     "UP", # pyupgrade
 ]
-ignore = [
-    "B008",  # do not perform function calls in argument defaults
-]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -51,3 +48,18 @@ force-single-line = false
 force-sort-within-sections = true
 order-by-type = false
 split-on-trailing-comma = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--cov=probable_train",
+    "--cov-report=term-missing",
+    "--cov-report=html:htmlcov",
+    "--cov-report=xml",
+    "-v",
+]
+filterwarnings = ["ignore::DeprecationWarning"]
+xfail_strict = true

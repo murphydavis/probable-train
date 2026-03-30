@@ -1,0 +1,7 @@
+report_date: '2023-01-01'
+positions:
+  - account_id: ACC001
+    ticker: AAPL
+    shares: 100
+    market_value: '15025.00'
+    custodian_ref: BANK1

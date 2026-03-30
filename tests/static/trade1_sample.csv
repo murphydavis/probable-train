@@ -1,0 +1,2 @@
+AccountID,Ticker,Quantity,Price,TradeType,TradeDate,SettlementDate
+ACC001,AAPL,100,150.25,BUY,2023-01-01,2023-01-01

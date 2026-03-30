@@ -1,0 +1,10 @@
+report_date: "20230101"
+positions:
+  - account_id: "ACC001"
+    ticker: "AAPL"
+    shares: "invalid"
+    market_value: "100.50"
+  - account_id: "ACC001"
+    ticker: "GOOGL"
+    shares: "100"
+    market_value: "invalid"

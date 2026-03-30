@@ -2,9 +2,11 @@
 Unit tests for utils and config modules
 """
 
-import pytest
 from unittest.mock import MagicMock, patch
 
+import pytest
+
+from probable_train import config
 from probable_train.utils import allowed_file, require_query_parameters
 
 
@@ -97,8 +99,6 @@ class TestConfig:
 
     def test_config_values(self):
         """Test that expected configuration values are present"""
-        from probable_train import config
-
         # Test that config has expected attributes
         assert hasattr(config, "DEBUG")
         assert hasattr(config, "ALLOWED_EXTENSIONS")
@@ -115,28 +115,19 @@ class TestConfig:
 
     def test_allowed_extensions_content(self):
         """Test ALLOWED_EXTENSIONS contains expected file types"""
-        from probable_train import config
-
         expected_extensions = {"csv", "psv", "txt", "yaml", "yml"}
         assert config.ALLOWED_EXTENSIONS == expected_extensions
 
     def test_ingest_types_content(self):
         """Test INGEST_TYPES contains expected ingest types"""
-        from probable_train import config
-
         expected_types = {"trade1", "trade2", "position"}
         assert config.INGEST_TYPES == expected_types
 
     def test_database_uri_format(self):
         """Test DATABASE_URI is in expected format"""
-        from probable_train import config
-
         assert config.DATABASE_URI.startswith("sqlite:///")
         assert config.DATABASE_URI.endswith(".db")
 
     def test_upload_folder_path(self):
         """Test UPLOAD_FOLDER is a valid path"""
-        from probable_train import config
-
         assert config.UPLOAD_FOLDER == "./uploads"
-        assert config.UPLOAD_FOLDER.startswith("./")

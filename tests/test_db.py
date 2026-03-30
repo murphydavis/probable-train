@@ -2,15 +2,15 @@
 Unit tests for database module
 """
 
-import pytest
 from datetime import date
 from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
+import pytest
 from sqlalchemy.exc import NoResultFound
 
 from probable_train.db.helper import get_or_create_account
-from probable_train.db.models.reconciliation import Account
+from probable_train.db.models.reconciliation import Account, Position, Trade
 
 
 class TestDbHelper:
@@ -135,10 +135,6 @@ class TestDbModels:
     )
     def test_model_creation(self, model_class, init_args, expected_attributes):
         """Test database model creation"""
-        from datetime import date
-        from decimal import Decimal
-        from probable_train.db.models.reconciliation import Account, Position, Trade
-
         model_classes = {"Account": Account, "Position": Position, "Trade": Trade}
         model_class_obj = model_classes[model_class](**init_args)
 

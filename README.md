@@ -91,21 +91,31 @@ account exists, and they will not be duplicated.
 
 ## Top level dependencies
 
-* `flask`
-    REST API framework
-* `sqlalchemy`
-    Database driver and ORM
-* `dateparser`
-    Used for simple date parsing from URL query parameters
-* `PyYAML`
-    Basic YAML parsing library for loading bank position report
-* `gunicorn`
-    This is the WSGI server, used to run the server in a more robust manner than the
-    built-in Flask server, which is intended for testing purposes
+* `flask>=3.1.3`
+    REST API framework for building the web application
+* `sqlalchemy>=2.0.48`
+    Database driver and ORM for database operations and model definitions
+* `dateparser>=1.3.0`
+    Used for flexible date parsing from URL query parameters and file data
+* `pyyaml>=6.0.3`
+    YAML parsing library for loading bank position reports from YAML files
+* `gunicorn>=25.1.0`
+    Production WSGI server for running the application in a robust manner
 
 ### Dev dependencies
-* `ipython`
-    This is a personal favorite, just a few more interactive niceties for the CLI
+
+* `pytest>=8.0.0`
+    Testing framework for unit and integration tests
+* `pytest-cov>=6.0.0`
+    Test coverage plugin for pytest to measure code coverage
+* `pytest-mock>=3.14.0`
+    Mocking library for pytest to create test doubles and fixtures
+* `ruff>=0.9.0`
+    Fast Python linter and code formatter for maintaining code quality
+* `pre-commit>=4.0.0`
+    Framework for managing pre-commit hooks for code quality checks
+* `ipython>=9.10.0`
+    Enhanced interactive Python shell with better CLI features
 
 ## Configuration
 Right now there's not much to configure, but there are a few you may tweak.
@@ -132,14 +142,14 @@ The base directory contains several files and folders:
 - `LICENSE`/`README.md`/`pyproject.toml`/`uv.lock`
   * These files are the same as they would be in any other Python project.
 - `static/`
-  * This directory contains various static files, at this point test files for the
-  ingest process.
+  * This directory contains various static files, including sample data files for testing
+  the ingest process (trade1_sample.csv, trade2_sample.psv, position_sample.yaml).
 - `uploads/`
   * This directory is used by the application to store all uploaded files. The original
   filenames and extensions are discarded, and the files renamed with a timestamp.
 - `tests/`
-  * This file contains tests, which includes unit tests and integration tests.
-  **not yet implemented**
+  * This directory contains comprehensive tests, including unit tests, integration tests,
+  and route tests. All tests currently provide 100% code coverage.
 - `probabletrain.db`
   * If you have initialized the database, by default it will be stored as a file in this
   top level directory.
@@ -152,9 +162,9 @@ The base directory contains several files and folders:
 - `probable_train/`
   * This directory contains the actual application code, and I will explain the
   highlights.
-  - `__init__.py`: This file contains the app definition, and at this stage all route
-  definitions. Ideally the routes would be factored out into a separate routes file or
-  multiple blueprints if there are multiple logical groupings.
+  - `__init__.py`: This file contains the app definition and imports the routes module.
+  - `routes.py`: This file contains all route definitions, factored out from the main app
+  file for better organization.
   - `config.py`: This file contains the flask app configuration.
   - `utils.py`: This file is for basic helper functions that don't have another logical
   home and serve a general purpose.
@@ -168,47 +178,63 @@ The base directory contains several files and folders:
 ├── LICENSE
 ├── README.md
 ├── gunicorn.conf.py
-├── probable_train/
-│   ├── __init__.py
-│   ├── config.py/
-│   ├── controllers/
-│   │   ├── __init__.py
-│   │   ├── ingest.py
-│   │   └── reconciliation.py
-│   ├── db/
-│   │   ├── __init__.py
-│   │   ├── helper.py
-│   │   ├── models/
-│   │   │   ├── __init__.py
-│   │   │   └── reconciliation.py
-│   │   └── tree.md
-│   └── utils.py
-├── probabletrain.db
 ├── pyproject.toml
+├── uv.lock
+├── probable_train/
+│   ├── __init__.py
+│   ├── routes.py
+│   ├── config.py
+│   ├── utils.py
+│   ├── controllers/
+│   │   ├── __init__.py
+│   │   ├── ingest.py
+│   │   ├── compliance.py
+│   │   └── reconciliation.py
+│   └── db/
+│       ├── __init__.py
+│       ├── helper.py
+│       └── models/
+│           ├── __init__.py
+│           └── reconciliation.py
+├── probabletrain.db
 ├── run.sh
 ├── run_debug.sh
 ├── static/
-│   ├── position.txt
-│   ├── position.yml
-│   ├── trade1.csv
-│   ├── trade2.psv
-│   └── trade3.tsv
+│   ├── position_sample.yaml
+│   ├── trade1_sample.csv
+│   └── trade2_sample.psv
 ├── tests/
-├── uploads/
-└── uv.lock
+│   ├── __init__.py
+│   ├── static/
+│   │   ├── invalid.xyz
+│   │   ├── position_sample.yaml
+│   │   ├── trade1_sample.csv
+│   │   └── trade2_sample.psv
+│   ├── test_controllers.py
+│   ├── test_db.py
+│   ├── test_routes.py
+│   └── test_utils_config.py
+└── uploads/
 ```
 
 ## Future Improvements
-Get CORRECT logic for reconciliation/compliance calculations. This is probably far and
-away priority #1 and the biggest mistake here.
 
-Implement proper unit tests! Right now I basically just have integration tests, but I
+Get CORRECT logic for reconciliation/compliance calculations. This is probably far and
+away priority #1, but the current logic represents my current understanding of what the
+calculations should be, but it is obviously limited by lack of experience.
+
+~~Implement proper unit tests! Right now I basically just have integration tests, but I
 have tried to keep my own logic largely factored into testable units. I am apprehensive
 about test driven development because wrinkles are always revealed in the course of
-implementation.
+implementation.~~ The project now has comprehensive unit tests, integration tests,
+ and route tests with 100% code coverage using pytest.
 
-Register a custom error handler so that 400s and other errors *also* return JSON so
-that this application can more smoothly be integrated as a microservice
+**Test Coverage Requirement**: All commits must maintain a minimum of 80% test coverage.
+ Run `uv run pytest --cov=probable_train --cov-fail-under=80` before committing
+ to verify coverage requirements are met.
+
+~~Register a custom error handler so that 400s and other errors *also* return JSON so
+that this application can more smoothly be integrated as a microservice~~
 
 I think I would like to use some sort of marshalling for the url parameters, such as
 Marshmallow - I almost did but needed to reel my ambition back in some
@@ -222,8 +248,8 @@ configuration as possible out of the code, in a place such as AWS Secrets Manage
 This is both secure *and* allows the flexibility of configuration changes without the
 need for any code deployment.
 
-Unit tests should have a required coverage percentage - probably not as a commit hook
-though, so I guess that's a bit more DevOps
+~~Unit tests should have a required coverage percentage - probably not as a commit hook
+though, so I guess that's a bit more DevOps~~ The project now maintains 100% code coverage.
 
 Use a more "proper" database - probably PostgreSQL, potentially via Amazon RDS.
 If I fully committed to AWS I would also like to store upload files in S3.

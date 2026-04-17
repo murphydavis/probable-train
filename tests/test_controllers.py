@@ -364,7 +364,7 @@ class TestReconciliation:
     @patch("probable_train.controllers.reconciliation.db_session")
     def test_get_reconciliation_report_empty(self, mock_session, mock_jsonify):
         """Test reconciliation report with no accounts"""
-        mock_session.query.return_value.all.return_value = []
+        mock_session.execute.return_value.all.return_value = []
 
         result = get_reconciliation_report("2023-01-01")
 
@@ -382,27 +382,35 @@ class TestReconciliation:
                     "account_id": "ACC001",
                     "ticker": "AAPL",
                     "position_shares": 100,
-                    "position_market_value": "15025.00",
+                    "position_market_value": Decimal("15025.00"),
                     "position_custodian": "BANK1",
-                    "trade_shares": 95,
-                    "trade_market_value": "14273.75",
-                    "trade_custodian": "BROKER1",
-                    "trade_date": date(2023, 1, 1),
-                    "position_report_date": date(2023, 1, 1),
-                    "trade_settlement_date": date(2023, 1, 1),
+                    "report_date": date(2023, 1, 1),
+                    "total_trade_shares": 100,
+                    "total_trade_market_value": Decimal("15025.00"),
+                    "trade_custodians": ["BROKER1"],
+                    "first_trade_date": date(2023, 1, 1),
+                    "last_trade_date": date(2023, 1, 1),
                 },
                 {
                     "ticker": "AAPL",
-                    "has_position": True,
-                    "has_trade": True,
-                    "position_shares": 100,
-                    "position_market_value": "15025.00",
-                    "position_custodian": "BANK1",
-                    "trade_shares": 95,
-                    "trade_market_value": "14273.75",
-                    "trade_custodian": "BROKER1",
-                    "reconciliation_status": "both_exist",
-                    "trade_date": "2023-01-01",
+                    "reconciliation_status": "reconciled",
+                    "position_data": {
+                        "shares": 100,
+                        "market_value": 15025.00,
+                        "custodian": "BANK1",
+                        "report_date": "2023-01-01",
+                    },
+                    "cumulative_trades_data": {
+                        "total_shares": 100,
+                        "total_market_value": 15025.00,
+                        "custodians": ["BROKER1"],
+                        "first_trade_date": "2023-01-01",
+                        "last_trade_date": "2023-01-01",
+                    },
+                    "differences": {
+                        "shares_difference": 0,
+                        "market_value_difference": 0.0,
+                    },
                 },
             ),
             (
@@ -410,27 +418,26 @@ class TestReconciliation:
                     "account_id": "ACC001",
                     "ticker": "AAPL",
                     "position_shares": 100,
-                    "position_market_value": "15025.00",
+                    "position_market_value": Decimal("15025.00"),
                     "position_custodian": "BANK1",
-                    "trade_shares": None,
-                    "trade_market_value": None,
-                    "trade_custodian": None,
-                    "trade_date": None,
-                    "position_report_date": date(2023, 1, 1),
-                    "trade_settlement_date": None,
+                    "report_date": date(2023, 1, 1),
+                    "total_trade_shares": None,
+                    "total_trade_market_value": None,
+                    "trade_custodians": None,
+                    "first_trade_date": None,
+                    "last_trade_date": None,
                 },
                 {
                     "ticker": "AAPL",
-                    "has_position": True,
-                    "has_trade": False,
-                    "position_shares": 100,
-                    "position_market_value": "15025.00",
-                    "position_custodian": "BANK1",
-                    "trade_shares": None,
-                    "trade_market_value": None,
-                    "trade_custodian": None,
                     "reconciliation_status": "position_only",
-                    "trade_date": None,
+                    "position_data": {
+                        "shares": 100,
+                        "market_value": 15025.00,
+                        "custodian": "BANK1",
+                        "report_date": "2023-01-01",
+                    },
+                    "cumulative_trades_data": None,
+                    "differences": None,
                 },
             ),
             (
@@ -440,25 +447,61 @@ class TestReconciliation:
                     "position_shares": None,
                     "position_market_value": None,
                     "position_custodian": None,
-                    "trade_shares": 95,
-                    "trade_market_value": "14273.75",
-                    "trade_custodian": "BROKER1",
-                    "trade_date": date(2023, 1, 1),
-                    "position_report_date": None,
-                    "trade_settlement_date": date(2023, 1, 1),
+                    "report_date": None,
+                    "total_trade_shares": 95,
+                    "total_trade_market_value": Decimal("14273.75"),
+                    "trade_custodians": ["BROKER1"],
+                    "first_trade_date": date(2023, 1, 1),
+                    "last_trade_date": date(2023, 1, 1),
                 },
                 {
                     "ticker": "AAPL",
-                    "has_position": False,
-                    "has_trade": True,
-                    "position_shares": None,
-                    "position_market_value": None,
-                    "position_custodian": None,
-                    "trade_shares": 95,
-                    "trade_market_value": "14273.75",
-                    "trade_custodian": "BROKER1",
-                    "reconciliation_status": "trade_only",
-                    "trade_date": "2023-01-01",
+                    "reconciliation_status": "trades_only",
+                    "position_data": None,
+                    "cumulative_trades_data": {
+                        "total_shares": 95,
+                        "total_market_value": 14273.75,
+                        "custodians": ["BROKER1"],
+                        "first_trade_date": "2023-01-01",
+                        "last_trade_date": "2023-01-01",
+                    },
+                    "differences": None,
+                },
+            ),
+            (
+                {
+                    "account_id": "ACC001",
+                    "ticker": "AAPL",
+                    "position_shares": 100,
+                    "position_market_value": Decimal("15025.00"),
+                    "position_custodian": "BANK1",
+                    "report_date": date(2023, 1, 1),
+                    "total_trade_shares": 95,
+                    "total_trade_market_value": Decimal("14273.75"),
+                    "trade_custodians": ["BROKER1"],
+                    "first_trade_date": date(2023, 1, 1),
+                    "last_trade_date": date(2023, 1, 1),
+                },
+                {
+                    "ticker": "AAPL",
+                    "reconciliation_status": "discrepancy",
+                    "position_data": {
+                        "shares": 100,
+                        "market_value": 15025.00,
+                        "custodian": "BANK1",
+                        "report_date": "2023-01-01",
+                    },
+                    "cumulative_trades_data": {
+                        "total_shares": 95,
+                        "total_market_value": 14273.75,
+                        "custodians": ["BROKER1"],
+                        "first_trade_date": "2023-01-01",
+                        "last_trade_date": "2023-01-01",
+                    },
+                    "differences": {
+                        "shares_difference": 5,
+                        "market_value_difference": 751.25,
+                    },
                 },
             ),
         ],
@@ -484,6 +527,10 @@ class TestReconciliation:
 
         account_id = mock_row_data["account_id"]
         ticker = mock_row_data["ticker"]
+
+        # Verify the expected report structure
+        assert account_id in call_args
+        assert ticker in call_args[account_id]
         assert call_args[account_id][ticker] == expected_report
 
         # Verify single query was called
@@ -494,40 +541,35 @@ class TestComplianceConcentration:
     """Test cases for compliance concentration endpoint"""
 
     @pytest.mark.parametrize(
-        "test_name,query_params,position_shares,position_value,trade_shares,trade_value,expected_breaches,expected_total_breaches,expected_breach_types",
+        "test_name,query_params,positions_data,expected_breaches",
         [
             (
-                "success_with_breaches",
-                {"date": "20230101", "threshold": "0.15"},
-                100,
-                Decimal("15025.00"),
-                80,  # 20% difference from position
-                Decimal("12020.00"),  # 20% difference from position
-                1,
-                1,
-                ["share_quantity", "market_value"],
+                "concentration_breach",
+                {"date": "20230101", "threshold": "0.2"},
+                [
+                    {"ticker": "AAPL", "shares": 100, "value": Decimal("15025.00")},
+                    {"ticker": "GOOGL", "shares": 50, "value": Decimal("125025.00")},
+                    {"ticker": "MSFT", "shares": 75, "value": Decimal("10000.00")},
+                ],
+                1,  # GOOGL is 125025/(15025+125025+10000) = 83.3% > 20%
             ),
             (
-                "no_breaches",
-                {"date": "20230101"},
-                100,
-                Decimal("15025.00"),
-                105,  # 5% difference from position
-                Decimal("15776.25"),  # 5% difference from position
-                0,
-                0,
-                [],
+                "no_concentration_breach",
+                {"date": "20230101", "threshold": "0.9"},
+                [
+                    {"ticker": "AAPL", "shares": 100, "value": Decimal("15025.00")},
+                    {"ticker": "GOOGL", "shares": 50, "value": Decimal("125025.00")},
+                    {"ticker": "MSFT", "shares": 75, "value": Decimal("10000.00")},
+                ],
+                0,  # No ticker exceeds 90% threshold
             ),
             (
-                "no_trades",
-                {"date": "20230101"},
-                100,
-                Decimal("15025.00"),
-                None,  # No trades
-                None,  # No trades
-                1,
-                1,
-                ["share_quantity", "market_value"],
+                "single_position",
+                {"date": "20230101", "threshold": "0.5"},
+                [
+                    {"ticker": "AAPL", "shares": 100, "value": Decimal("15025.00")},
+                ],
+                1,  # AAPL is 100% > 50%
             ),
         ],
     )
@@ -537,13 +579,8 @@ class TestComplianceConcentration:
         mock_parse,
         test_name,
         query_params,
-        position_shares,
-        position_value,
-        trade_shares,
-        trade_value,
+        positions_data,
         expected_breaches,
-        expected_total_breaches,
-        expected_breach_types,
     ):
         """Test compliance concentration endpoint with various scenarios"""
         # Mock date parsing
@@ -554,113 +591,76 @@ class TestComplianceConcentration:
         # Mock database data
         with app.test_client() as client:
             with patch("probable_train.db_session.query") as mock_query:
-                with patch("probable_train.db_session.execute") as mock_execute:
-                    # Mock account
-                    mock_account = MagicMock()
-                    mock_account.id = "ACC001"
-                    mock_query.return_value.all.return_value = [mock_account]
+                # Create mock breach results
+                mock_breach_results = []
+                total_value = sum(pos["value"] for pos in positions_data)
 
-                    # Mock position
-                    mock_position = MagicMock()
-                    mock_position.ticker = "AAPL"
-                    mock_position.share_qty = position_shares
-                    mock_position.market_value = position_value
-                    mock_position.custodian = "BANK1"
-                    mock_position.report_date = datetime(2023, 1, 1).date()
-
-                    # Setup trades list
-                    trades = []
-                    if trade_shares is not None:
-                        mock_trade = MagicMock()
-                        mock_trade.ticker = "AAPL"
-                        mock_trade.share_qty = trade_shares
-                        mock_trade.market_value = trade_value
-                        mock_trade.custodian = "BROKER1"
-                        trades = [mock_trade]
-
-                    # Setup mock execute to return positions and trades
-                    mock_execute.return_value.scalars.return_value.all.side_effect = [
-                        [mock_position],  # Positions
-                        trades,  # Trades (may be empty)
-                    ]
-
-                    # Build query string
-                    query_string = "&".join(
-                        [f"{k}={v}" for k, v in query_params.items()]
-                    )
-                    response = client.get(f"/compliance/concentration?{query_string}")
-
-                    assert response.status_code == 200
-                    response_data = response.get_json()
-
-                    # Build expected response data
+                for pos_data in positions_data:
+                    concentration_pct = float(pos_data["value"] / total_value)
                     expected_threshold = float(query_params.get("threshold", 0.2))
-                    expected_response = {
-                        "date": "2023-01-01",
-                        "threshold": expected_threshold,
-                        "breaches": [],
-                        "total_breaches": expected_total_breaches,
-                    }
 
-                    # Add breach data if expected
-                    if expected_breaches > 0:
-                        # Calculate expected differences
-                        share_diff = (
-                            (trade_shares - position_shares)
-                            if trade_shares is not None
-                            else -position_shares
-                        )
-                        share_diff_pct = (
-                            abs(share_diff / position_shares)
-                            if position_shares != 0
-                            else 1.0
-                        )
+                    if concentration_pct > expected_threshold:
+                        # Create mock result object
+                        mock_result = MagicMock()
+                        mock_result.account_id = "ACC001"
+                        mock_result.ticker = pos_data["ticker"]
+                        mock_result.share_qty = pos_data["shares"]
+                        mock_result.market_value = pos_data["value"]
+                        mock_result.custodian = "BANK1"
+                        mock_result.report_date = datetime(2023, 1, 1).date()
+                        mock_result.total_portfolio_value = total_value
+                        mock_result.concentration_percentage = concentration_pct
+                        mock_breach_results.append(mock_result)
 
-                        trade_value_for_calc = (
-                            trade_value if trade_value is not None else 0
-                        )
-                        value_diff = trade_value_for_calc - position_value
-                        value_diff_pct = (
-                            abs(value_diff / position_value)
-                            if position_value != 0
-                            else 1.0
-                        )
+                # Mock the single query with HAVING clause
+                mock_chain = (
+                    mock_query.return_value.join.return_value.filter.return_value.filter.return_value.having.return_value.all
+                )
+                mock_chain.return_value = mock_breach_results
 
-                        expected_custodians = (
-                            ["BROKER1"] if trade_shares is not None else []
-                        )
+                # Build query string
+                query_string = "&".join(
+                    [f"{k}={v}" for k, v in query_params.items()]
+                )
+                response = client.get(f"/compliance/concentration?{query_string}")
 
-                        expected_response["breaches"] = [
-                            {
+                assert response.status_code == 200
+                response_data = response.get_json()
+
+                # Build expected response data
+                expected_threshold = float(query_params.get("threshold", 0.2))
+                expected_response = {
+                    "date": "2023-01-01",
+                    "threshold": expected_threshold,
+                    "breaches": [],
+                }
+
+                # Add breach data if expected
+                if expected_breaches > 0:
+                    # Calculate total portfolio value and concentration breaches
+                    total_value = sum(pos["value"] for pos in positions_data)
+
+                    for pos_data in positions_data:
+                        concentration_pct = float(pos_data["value"] / total_value)
+                        if concentration_pct > expected_threshold:
+                            expected_response["breaches"].append({
                                 "account_id": "ACC001",
-                                "ticker": "AAPL",
-                                "breach_type": expected_breach_types,
-                                "differences": {
-                                    "share_qty_difference": share_diff,
-                                    "share_qty_difference_percentage": share_diff_pct,
-                                    "market_value_difference": float(value_diff),
-                                    "market_value_difference_percentage": str(
-                                        value_diff_pct
-                                    ),
-                                },
+                                "ticker": pos_data["ticker"],
+                                "breach_type": "concentration",
                                 "position_data": {
                                     "custodian": "BANK1",
-                                    "market_value": float(position_value),
+                                    "market_value": float(pos_data["value"]),
                                     "report_date": "2023-01-01",
-                                    "share_qty": position_shares,
+                                    "share_qty": pos_data["shares"],
                                 },
-                                "trade_data": {
-                                    "custodians": expected_custodians,
-                                    "market_value": float(trade_value_for_calc),
-                                    "share_qty": (
-                                        trade_shares if trade_shares is not None else 0
-                                    ),
+                                "portfolio_data": {
+                                    "total_portfolio_value": float(total_value),
+                                    "concentration_percentage": concentration_pct,
                                 },
                                 "threshold": expected_threshold,
-                            }
-                        ]
+                            })
 
-                    assert response_data == expected_response
+                assert response_data == expected_response
 
     def test_compliance_concentration_missing_date(self):
         """Test compliance concentration endpoint without date parameter"""
